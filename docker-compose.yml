@@ -1,0 +1,50 @@
+services:
+
+  # ── Postgres 17 ────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     ceos
+      POSTGRES_PASSWORD: ceos
+      POSTGRES_DB:       ceos
+    ports:
+      - "5432:5432"          # expose locally so devs can connect with psql / DBeaver
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ceos -d ceos"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── CE-OS API ───────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      DATABASE_URL: postgres://ceos:ceos@postgres:5432/ceos
+      JWT_SECRET:   ${JWT_SECRET:?JWT_SECRET must be set}
+      PORT:         4000
+      CORS_ORIGIN:  ${CORS_ORIGIN:-http://localhost:5173}
+      NODE_ENV:     production
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Migrate then start — safe for single-instance deployments.
+    # For multi-instance, run migrations as a separate one-shot job first.
+    command: >
+      sh -c "node --import tsx/esm scripts/migrate.ts &&
+             node --import tsx/esm src/server.ts"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  postgres_data:

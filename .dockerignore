@@ -1,0 +1,42 @@
+# node_modules are installed fresh inside Docker
+node_modules
+server/node_modules
+
+# Dev-only files
+.env
+.env.local
+server/.env
+
+# Build artefacts
+dist
+server/dist
+
+# Test / lint
+coverage
+.dependency-cruiser.cjs
+
+# VCS and editor
+.git
+.gitignore
+.vscode
+.idea
+
+# Frontend source — not needed by the API image
+# (only src/shared is needed; the full React app is a separate build target)
+src/app
+src/core
+src/features
+src/pages
+src/data
+public
+index.html
+vite.config.ts
+tailwind.config.*
+tsconfig*.json
+!server/tsconfig.json
+
+# Docs and CI (not runtime)
+*.md
+.github
+scripts
+db

@@ -1,0 +1,1 @@
+export { NewGRN } from "./NewGrnPage";

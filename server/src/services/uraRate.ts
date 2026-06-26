@@ -38,6 +38,18 @@ async function scrape(forDate?: Date): Promise<UraRateResult> {
   try {
     const browser = await getBrowser();
     page = await browser.newPage();
+
+    // Block images/fonts/media to speed up page load
+    await page.setRequestInterception(true);
+    page.on("request", (req) => {
+      const type = req.resourceType();
+      if (type === "image" || type === "font" || type === "media") {
+        req.abort();
+      } else {
+        req.continue();
+      }
+    });
+
     await page.goto(URA_URL, { waitUntil: "domcontentloaded", timeout: 30_000 });
 
     await page.click("#rate-type-2");
@@ -52,12 +64,25 @@ async function scrape(forDate?: Date): Promise<UraRateResult> {
       }
     }, dateStr);
 
+    // Click search and wait for DataTable to repopulate (event-driven, not fixed sleep)
     await page.click('button[name="submit_search"]');
+    await page
+      .waitForFunction(
+        () => {
+          const rows = document.querySelectorAll("table tbody tr");
+          // DataTables shows a single "No data" row while loading — wait until
+          // there are real data rows or we've waited long enough.
+          if (rows.length === 0) return false;
+          const firstCell = rows[0]?.querySelector("td")?.textContent?.trim() ?? "";
+          return firstCell.length > 0 && firstCell !== "No data available in table";
+        },
+        { timeout: 15_000 },
+      )
+      .catch(() => {
+        // Timed out waiting — fall through to extraction (table may be empty)
+      });
 
-    // Wait for AJAX — give up to 8 s for slower servers
-    await new Promise((r) => setTimeout(r, 8_000));
-
-    // Capture table content for diagnostics + extract rate
+    // Extract rate + capture debug snapshot
     const result = await page.evaluate(() => {
       const rows = Array.from(document.querySelectorAll("table tbody tr"));
       const snapshot = rows.slice(0, 6).map((r) =>
@@ -75,7 +100,7 @@ async function scrape(forDate?: Date): Promise<UraRateResult> {
           if (Number.isFinite(v) && v > 100) { rate = v; break; }
         }
 
-        // Strategy 2: any cell contains "USD" and any cell looks like a UGX rate
+        // Strategy 2: any cell contains "USD" and any cell contains "exports"
         const hasUsd = cells.some((c) => c.toUpperCase() === "USD");
         const hasExports = cells.some((c) => c.toLowerCase() === "exports");
         if (hasUsd && hasExports) {
@@ -91,11 +116,10 @@ async function scrape(forDate?: Date): Promise<UraRateResult> {
     });
 
     if (!result.rate) {
-      const debug = JSON.stringify(result.snapshot);
       return {
         ok: false,
         error: "Rate not found in URA table — page structure may have changed.",
-        debug,
+        debug: JSON.stringify(result.snapshot),
       };
     }
 

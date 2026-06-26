@@ -6,6 +6,7 @@ import { PageHeader } from "@/shared/components/states";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs";
 import { Save, Check } from "lucide-react";
 import type { Settings as SettingsType } from "@/shared/types";
 
@@ -13,20 +14,27 @@ type NumKey = {
   [K in keyof SettingsType]: SettingsType[K] extends number ? K : never;
 }[keyof SettingsType];
 
+type TabId = "standards" | "costs" | "reference";
+
 export function Settings() {
   const { settings, update, refresh } = useData();
   const { can } = useAuth();
   const updateSettingsApi = useUpdateSettingsApi();
   const editable = can("settings.edit");
-  const [dirty, setDirty] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
 
-  // Edits update local state immediately; in API mode they persist on "Save".
-  const setNum = (key: NumKey, value: number) => {
+  const [activeTab, setActiveTab] = useState<TabId>("standards");
+  const [dirtyTabs, setDirtyTabs] = useState<Set<TabId>>(new Set());
+  const [saving, setSaving] = useState(false);
+  const [savedTab, setSavedTab] = useState<TabId | null>(null);
+
+  const markDirty = (tab: TabId) => {
+    setDirtyTabs((prev) => { const s = new Set(prev); s.add(tab); return s; });
+    setSavedTab(null);
+  };
+
+  const setNum = (key: NumKey, tab: TabId, value: number) => {
     update({ settings: { ...settings, [key]: value } });
-    setDirty(true);
-    setSaved(false);
+    markDirty(tab);
   };
 
   const save = async () => {
@@ -46,11 +54,20 @@ export function Settings() {
         target_margin_pct: settings.target_margin_pct,
       });
       await refresh();
-      setDirty(false);
-      setSaved(true);
+      setDirtyTabs((prev) => { const s = new Set(prev); s.delete(activeTab); return s; });
+      setSavedTab(activeTab);
     } finally {
       setSaving(false);
     }
+  };
+
+  const isActiveDirty = activeTab !== "reference" && dirtyTabs.has(activeTab);
+  const justSaved = savedTab === activeTab && !isActiveDirty;
+
+  const TAB_LABEL: Record<TabId, string> = {
+    standards: "Quality standards",
+    costs: "Cost defaults",
+    reference: "Reference data",
   };
 
   return (
@@ -59,68 +76,139 @@ export function Settings() {
         title="Settings"
         subtitle="Standards and managed lists. Every threshold the calculators use lives here."
         action={
-          editable ? (
-            <Button onClick={save} disabled={saving || !dirty}>
-              {saved && !dirty ? (
-                <>
-                  <Check className="size-4" /> Saved
-                </>
+          editable && activeTab !== "reference" ? (
+            <Button onClick={save} disabled={saving || !isActiveDirty}>
+              {justSaved ? (
+                <><Check className="size-4" /> Saved</>
               ) : (
-                <>
-                  <Save className="size-4" /> {saving ? "Saving…" : "Save to server"}
-                </>
+                <><Save className="size-4" /> {saving ? "Saving…" : `Save ${TAB_LABEL[activeTab]}`}</>
               )}
             </Button>
           ) : undefined
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Quality standards</CardTitle>
-            <CardDescription>
-              Deductions apply only above these thresholds.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <NumField label="Moisture standard" suffix="%" value={settings.mc_standard_pct} onChange={(v) => setNum("mc_standard_pct", v)} disabled={!editable} hint="Each % above is deducted from weight." />
-            <NumField label="Fallen matter standard" suffix="%" value={settings.fm_standard_pct} onChange={(v) => setNum("fm_standard_pct", v)} disabled={!editable} />
-            <NumField label="Defect standard" suffix="%" value={settings.defect_standard_pct} onChange={(v) => setNum("defect_standard_pct", v)} disabled={!editable} hint="Only the excess above this is penalised." />
-            <Row label="Defect handling (default)">
-              <Badge variant="primary">{settings.default_defect_handling === "weight" ? "Weight deduction" : "Price discount"}</Badge>
-            </Row>
-            <Row label="Fallen-matter base">
-              <Badge variant="outline">{settings.fm_base === "after_mc" ? "Moisture-adjusted weight" : "Net physical weight"}</Badge>
-            </Row>
-          </CardContent>
-        </Card>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabId)}>
+        <TabsList>
+          <TabsTrigger value="standards" className="gap-1.5">
+            Quality standards
+            {dirtyTabs.has("standards") && (
+              <span className="size-1.5 rounded-full bg-primary" aria-label="unsaved changes" />
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="costs" className="gap-1.5">
+            Cost defaults
+            {dirtyTabs.has("costs") && (
+              <span className="size-1.5 rounded-full bg-primary" aria-label="unsaved changes" />
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="reference">Reference data</TabsTrigger>
+        </TabsList>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Per-kg cost defaults</CardTitle>
-            <CardDescription>Build into landed cost on every batch.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <NumField label="URA tax" suffix="% of purchase" value={settings.ura_tax_pct} onChange={(v) => setNum("ura_tax_pct", v)} disabled={!editable} />
-            <NumField label="Handling" suffix="UGX/kg" value={settings.handling_per_kg} onChange={(v) => setNum("handling_per_kg", v)} disabled={!editable} />
-            <NumField label="Gunny bags" suffix="UGX/kg" value={settings.gunny_bags_per_kg} onChange={(v) => setNum("gunny_bags_per_kg", v)} disabled={!editable} hint={`USD-linked · set at rate ${settings.gunny_bags_usd_ref_rate}`} />
-            <NumField label="Paperwork" suffix="UGX/kg" value={settings.paperwork_per_kg} onChange={(v) => setNum("paperwork_per_kg", v)} disabled={!editable} />
-            <NumField label="Target margin" suffix="%" value={settings.target_margin_pct} onChange={(v) => setNum("target_margin_pct", v)} disabled={!editable} hint="Drives the forex risk flag." />
-          </CardContent>
-        </Card>
-      </div>
+        {/* ── Quality standards ── */}
+        <TabsContent value="standards">
+          <Card>
+            <CardHeader>
+              <CardTitle>Quality standards</CardTitle>
+              <CardDescription>Deductions apply only above these thresholds.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <NumField
+                label="Moisture standard" suffix="%"
+                value={settings.mc_standard_pct}
+                onChange={(v) => setNum("mc_standard_pct", "standards", v)}
+                disabled={!editable}
+                hint="Each % above is deducted from weight."
+              />
+              <NumField
+                label="Fallen matter standard" suffix="%"
+                value={settings.fm_standard_pct}
+                onChange={(v) => setNum("fm_standard_pct", "standards", v)}
+                disabled={!editable}
+              />
+              <NumField
+                label="Defect standard" suffix="%"
+                value={settings.defect_standard_pct}
+                onChange={(v) => setNum("defect_standard_pct", "standards", v)}
+                disabled={!editable}
+                hint="Only the excess above this is penalised."
+              />
+              <Row label="Defect handling (default)">
+                <Badge variant="primary">
+                  {settings.default_defect_handling === "weight" ? "Weight deduction" : "Price discount"}
+                </Badge>
+              </Row>
+              <Row label="Fallen-matter base">
+                <Badge variant="outline">
+                  {settings.fm_base === "after_mc" ? "Moisture-adjusted weight" : "Net physical weight"}
+                </Badge>
+              </Row>
+            </CardContent>
+          </Card>
+          {!editable && <ReadOnlyNote />}
+        </TabsContent>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <ListCard title="Coffee grades" items={settings.coffee_grades} />
-        <ListCard title="Districts" items={settings.districts} />
-        <ListCard title="Expense categories" items={settings.expense_categories} />
-      </div>
+        {/* ── Cost defaults ── */}
+        <TabsContent value="costs">
+          <Card>
+            <CardHeader>
+              <CardTitle>Per-kg cost defaults</CardTitle>
+              <CardDescription>Build into landed cost on every batch.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <NumField
+                label="URA tax" suffix="% of purchase"
+                value={settings.ura_tax_pct}
+                onChange={(v) => setNum("ura_tax_pct", "costs", v)}
+                disabled={!editable}
+              />
+              <NumField
+                label="Handling" suffix="UGX/kg"
+                value={settings.handling_per_kg}
+                onChange={(v) => setNum("handling_per_kg", "costs", v)}
+                disabled={!editable}
+              />
+              <NumField
+                label="Gunny bags" suffix="UGX/kg"
+                value={settings.gunny_bags_per_kg}
+                onChange={(v) => setNum("gunny_bags_per_kg", "costs", v)}
+                disabled={!editable}
+                hint={`USD-linked · set at rate ${settings.gunny_bags_usd_ref_rate}`}
+              />
+              <NumField
+                label="Paperwork" suffix="UGX/kg"
+                value={settings.paperwork_per_kg}
+                onChange={(v) => setNum("paperwork_per_kg", "costs", v)}
+                disabled={!editable}
+              />
+              <NumField
+                label="Target margin" suffix="%"
+                value={settings.target_margin_pct}
+                onChange={(v) => setNum("target_margin_pct", "costs", v)}
+                disabled={!editable}
+                hint="Drives the forex risk flag."
+              />
+            </CardContent>
+          </Card>
+          {!editable && <ReadOnlyNote />}
+        </TabsContent>
 
-      {!editable && (
-        <p className="text-sm text-muted-foreground">
-          You're viewing as a non-admin role — standards are read-only. Switch to
-          Admin / Owner in the top bar to edit.
+        {/* ── Reference data ── */}
+        <TabsContent value="reference">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <ListCard title="Coffee grades" items={settings.coffee_grades} />
+            <ListCard title="Districts" items={settings.districts} />
+            <ListCard title="Expense categories" items={settings.expense_categories} />
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* unsaved-changes warning when switching away */}
+      {dirtyTabs.size > 0 && activeTab === "reference" && (
+        <p className="text-sm text-warning-foreground">
+          You have unsaved changes in{" "}
+          {[...dirtyTabs].filter((t) => t !== "reference").map((t) => TAB_LABEL[t]).join(" and ")}.
+          Switch back to save them.
         </p>
       )}
     </div>
@@ -128,19 +216,10 @@ export function Settings() {
 }
 
 function NumField({
-  label,
-  suffix,
-  value,
-  onChange,
-  disabled,
-  hint,
+  label, suffix, value, onChange, disabled, hint,
 }: {
-  label: string;
-  suffix: string;
-  value: number;
-  onChange: (v: number) => void;
-  disabled?: boolean;
-  hint?: string;
+  label: string; suffix: string; value: number;
+  onChange: (v: number) => void; disabled?: boolean; hint?: string;
 }) {
   return (
     <div>
@@ -182,12 +261,19 @@ function ListCard({ title, items }: { title: string; items: string[] }) {
       <CardContent>
         <div className="flex flex-wrap gap-1.5">
           {items.map((i) => (
-            <Badge key={i} variant="outline">
-              {i}
-            </Badge>
+            <Badge key={i} variant="outline">{i}</Badge>
           ))}
         </div>
       </CardContent>
     </Card>
   );
 }
+
+function ReadOnlyNote() {
+  return (
+    <p className="mt-3 text-sm text-muted-foreground">
+      You're viewing as a non-admin role — settings are read-only.
+    </p>
+  );
+}
+

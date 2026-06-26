@@ -206,8 +206,8 @@ export function NewGRN() {
         defect_handling_mode: mode,
       });
       setApiResult(res);
-      // pull the new batch into the store so Batches/detail show it live
       void data.refresh();
+      navigate(`/batches/${res.batch.id}`);
     } catch (e) {
       setApiError(e instanceof Error ? e.message : "Submission failed");
     } finally {

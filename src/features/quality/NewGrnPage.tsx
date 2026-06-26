@@ -231,7 +231,7 @@ export function NewGRN() {
         subtitle="Record incoming coffee. Net payable weight and amount payable update live as you grade."
         action={
           <Badge variant="success">
-            <Database className="size-3" /> Live · saving to API
+            <Database className="size-3" /> Live · auto-saving
           </Badge>
         }
       />

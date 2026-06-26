@@ -17,6 +17,7 @@ import settingsRoutes from "./routes/settings.ts";
 import approvalRoutes from "./routes/approvals.ts";
 import userRoutes from "./routes/users.ts";
 import clientRoutes from "./routes/clients.ts";
+import supplierRoutes from "./routes/suppliers.ts";
 import shipmentRoutes from "./routes/shipments.ts";
 import documentRoutes from "./routes/documents.ts";
 
@@ -72,6 +73,7 @@ export async function buildApp(opts: BuildAppOptions = {}) {
   await app.register(approvalRoutes);
   await app.register(userRoutes);
   await app.register(clientRoutes);
+  await app.register(supplierRoutes);
   await app.register(shipmentRoutes);
   await app.register(documentRoutes);
 

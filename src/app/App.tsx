@@ -15,6 +15,7 @@ import { Forex } from "@/features/forex";
 import { Traceability } from "@/features/traceability";
 import { Shipments } from "@/features/shipments";
 import { Clients, CatalogPrint } from "@/features/crm";
+import { Suppliers } from "@/features/suppliers";
 import { Documents, DocumentPrint } from "@/features/documents";
 import { Notifications } from "@/features/notifications";
 import { Settings } from "@/features/settings";
@@ -90,6 +91,14 @@ export default function App() {
             }
           />
           <Route path="clients" element={<Clients />} />
+          <Route
+            path="suppliers"
+            element={
+              <Require perm="suppliers.manage">
+                <Suppliers />
+              </Require>
+            }
+          />
           <Route path="documents" element={<Documents />} />
           <Route path="notifications" element={<Notifications />} />
           <Route

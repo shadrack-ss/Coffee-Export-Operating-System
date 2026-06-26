@@ -17,6 +17,7 @@ export type Permission =
   | "users.manage"
   | "settings.edit"
   | "clients.manage"
+  | "suppliers.manage"
   | "audit.view"
   | "forex.manage";
 
@@ -32,6 +33,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "users.manage",
     "settings.edit",
     "clients.manage",
+    "suppliers.manage",
     "audit.view",
     "forex.manage",
   ],

@@ -212,6 +212,14 @@ export const api = {
     return req(`/clients/${id}`, { method: "PUT", body: JSON.stringify(input) });
   },
 
+  createSupplier(input: ApiCreateSupplierInput): Promise<{ id: string }> {
+    return req("/suppliers", { method: "POST", body: JSON.stringify(input) });
+  },
+
+  updateSupplier(id: string, input: Partial<ApiCreateSupplierInput>): Promise<{ id: string }> {
+    return req(`/suppliers/${id}`, { method: "PUT", body: JSON.stringify(input) });
+  },
+
   createShipment(input: ApiCreateShipmentInput): Promise<{ id: string }> {
     return req("/shipments", { method: "POST", body: JSON.stringify(input) });
   },
@@ -242,6 +250,15 @@ export interface ApiCreateClientInput {
   country: string;
   email: string;
   segment: string;
+}
+
+export interface ApiCreateSupplierInput {
+  name: string;
+  type: string;
+  district_id: number;
+  contact: string;
+  gps_lat?: number | null;
+  gps_lng?: number | null;
 }
 
 export interface ApiCreateShipmentInput {

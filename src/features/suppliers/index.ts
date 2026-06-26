@@ -1,0 +1,1 @@
+export { Suppliers } from "./SuppliersPage";

@@ -1,6 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useData } from "@/core/store";
+import { useAuth } from "@/core/auth";
+import { api } from "@/core/api";
 import { batchFinancials } from "./selectors";
 import { computeQuality, type DerivationStep } from "@/shared/calc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -8,6 +10,14 @@ import { PageHeader, EmptyState } from "@/shared/components/states";
 import { StatusBadge, RiskBadge } from "@/shared/components/badges";
 import { QualityWorking } from "@/shared/components/QualityWorking";
 import { Badge } from "@/shared/ui/badge";
+import { Button } from "@/shared/ui/button";
+import { Label } from "@/shared/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/ui/dialog";
 import {
   fmtUgx,
   fmtUgxLabel,
@@ -16,13 +26,35 @@ import {
   fmtUsd,
   fmtRate,
 } from "@/shared/lib/money";
-import { ArrowLeft, TrendingUp, GitBranch } from "lucide-react";
+import { ArrowLeft, TrendingUp, GitBranch, Trash2, AlertTriangle } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 
 export function BatchDetail() {
   const { id } = useParams();
   const data = useData();
+  const { can } = useAuth();
   const liveRate = data.liveRate?.usd_ugx_rate ?? 0;
+
+  const [voidOpen, setVoidOpen] = useState(false);
+  const [voidReason, setVoidReason] = useState("");
+  const [voiding, setVoiding] = useState(false);
+  const [voidError, setVoidError] = useState<string | null>(null);
+
+  const handleVoid = async () => {
+    if (!id || voidReason.trim().length < 3) return;
+    setVoiding(true);
+    setVoidError(null);
+    try {
+      await api.voidBatch(id, voidReason.trim());
+      await data.refresh();
+      setVoidOpen(false);
+      setVoidReason("");
+    } catch (e) {
+      setVoidError(e instanceof Error ? e.message : "Failed to void batch");
+    } finally {
+      setVoiding(false);
+    }
+  };
 
   const batch = data.batches.find((b) => b.id === id);
 
@@ -72,9 +104,67 @@ export function BatchDetail() {
           <div className="flex items-center gap-2">
             <StatusBadge status={batch.status} />
             {derived.revenue_ugx > 0 && <RiskBadge risk={derived.risk} />}
+            {can("batches.void") && !batch.voided_at && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-danger hover:bg-danger/10 hover:text-danger"
+                onClick={() => setVoidOpen(true)}
+              >
+                <Trash2 className="size-3.5" /> Void
+              </Button>
+            )}
           </div>
         }
       />
+
+      {batch.voided_at && (
+        <div className="flex items-start gap-3 rounded-md border border-danger/30 bg-danger/5 px-4 py-3 text-sm">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-danger" />
+          <div>
+            <span className="font-medium text-danger">This batch has been voided</span>
+            {batch.void_reason && (
+              <span className="ml-2 text-muted-foreground">— {batch.void_reason}</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Void confirmation dialog */}
+      <Dialog open={voidOpen} onOpenChange={setVoidOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Void {batch.batch_code}?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            The batch will be marked as voided and excluded from all financial
+            calculations. This cannot be undone.
+          </p>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Reason (required)</Label>
+            <input
+              className="input w-full"
+              placeholder="e.g. Duplicate entry — same as MSK-2026-0001"
+              value={voidReason}
+              onChange={(e) => setVoidReason(e.target.value)}
+              autoFocus
+            />
+          </div>
+          {voidError && <p className="text-xs text-danger">{voidError}</p>}
+          <div className="flex justify-end gap-2 pt-1">
+            <Button variant="outline" onClick={() => setVoidOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              disabled={voiding || voidReason.trim().length < 3}
+              onClick={handleVoid}
+            >
+              {voiding ? "Voiding…" : "Void batch"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* summary strip */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

@@ -101,6 +101,9 @@ export interface Batch extends Base {
   buyer_id: string | null;
   /** UGX/kg agreed with the farmer at intake */
   market_price_per_kg: number;
+  voided_at: string | null;
+  voided_by: string | null;
+  void_reason: string | null;
 }
 
 export interface QualityMetrics extends Base {

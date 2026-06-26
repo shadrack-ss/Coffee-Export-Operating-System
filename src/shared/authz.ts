@@ -19,7 +19,8 @@ export type Permission =
   | "clients.manage"
   | "suppliers.manage"
   | "audit.view"
-  | "forex.manage";
+  | "forex.manage"
+  | "batches.void";
 
 export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
   grader: ["grn.create", "quality.edit"],
@@ -36,6 +37,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "suppliers.manage",
     "audit.view",
     "forex.manage",
+    "batches.void",
   ],
   auditor: ["costing.view", "audit.view"],
 };

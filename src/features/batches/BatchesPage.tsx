@@ -5,6 +5,7 @@ import { useAuth } from "@/core/auth";
 import { allBatchFinancials } from "./selectors";
 import { PageHeader, EmptyState } from "@/shared/components/states";
 import { StatusBadge, RiskBadge } from "@/shared/components/badges";
+import { Badge } from "@/shared/ui/badge";
 import { Card } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { fmtUgx, fmtKg } from "@/shared/lib/money";
@@ -84,15 +85,20 @@ export function Batches() {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((f) => (
+                {rows.map((f) => {
+                  const voided = !!f.batch.voided_at;
+                  return (
                   <tr
                     key={f.batch.id}
-                    className="border-b border-border/60 last:border-0 hover:bg-muted/40"
+                    className={cn(
+                      "border-b border-border/60 last:border-0 hover:bg-muted/40",
+                      voided && "opacity-50",
+                    )}
                   >
                     <td className="px-4 py-3">
                       <Link
                         to={`/batches/${f.batch.id}`}
-                        className="font-medium hover:text-primary hover:underline"
+                        className={cn("font-medium hover:text-primary hover:underline", voided && "line-through")}
                       >
                         {f.batch.batch_code}
                       </Link>
@@ -125,10 +131,12 @@ export function Batches() {
                       {f.revenue_ugx > 0 ? fmtUgx(f.profit_loss_ugx) : "—"}
                     </td>
                     <td className="px-3 py-3">
-                      <StatusBadge status={f.batch.status} />
+                      {voided
+                        ? <Badge variant="outline" className="text-danger border-danger/40">Voided</Badge>
+                        : <StatusBadge status={f.batch.status} />}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      {f.revenue_ugx > 0 ? (
+                      {!voided && f.revenue_ugx > 0 ? (
                         <RiskBadge risk={f.risk} />
                       ) : (
                         <span className="text-xs text-muted-foreground">
@@ -137,7 +145,8 @@ export function Batches() {
                       )}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

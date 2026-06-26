@@ -1,7 +1,7 @@
 /* Data access for batches — plain parameterised SQL over the pool. */
 
 import type { PoolClient } from "pg";
-import { pool } from "../db.ts";
+import { pool, withTx } from "../db.ts";
 
 export interface BatchRow {
   id: string;
@@ -18,6 +18,9 @@ export interface BatchRow {
   buyer_id: string | null;
   market_price_per_kg: number;
   created_at: string;
+  voided_at: string | null;
+  voided_by: string | null;
+  void_reason: string | null;
 }
 
 export async function listBatches(): Promise<BatchRow[]> {
@@ -53,4 +56,27 @@ export async function nextBatchCode(
   );
   const seq = Number(cnt[0]?.n ?? 0) + 1;
   return `${prefix}${String(seq).padStart(4, "0")}`;
+}
+
+export async function voidBatch(
+  id: string,
+  actor: string,
+  reason: string,
+): Promise<BatchRow | null> {
+  return withTx(async (c) => {
+    const { rows } = await c.query<BatchRow>(
+      `UPDATE batches
+         SET voided_at = now(), voided_by = $2, void_reason = $3
+       WHERE id = $1 AND voided_at IS NULL
+       RETURNING *`,
+      [id, actor, reason],
+    );
+    if (!rows[0]) return null;
+    await c.query(
+      `INSERT INTO audit_log (actor, action, entity_type, entity_id, payload, at)
+       VALUES ($1, 'void_batch', 'batch', $2, $3, now())`,
+      [actor, id, JSON.stringify({ reason })],
+    );
+    return rows[0];
+  });
 }

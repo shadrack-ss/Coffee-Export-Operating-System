@@ -220,6 +220,10 @@ export const api = {
     return req(`/suppliers/${id}`, { method: "PUT", body: JSON.stringify(input) });
   },
 
+  voidBatch(id: string, reason: string): Promise<{ id: string }> {
+    return req(`/batches/${id}/void`, { method: "POST", body: JSON.stringify({ reason }) });
+  },
+
   createShipment(input: ApiCreateShipmentInput): Promise<{ id: string }> {
     return req("/shipments", { method: "POST", body: JSON.stringify(input) });
   },

@@ -149,6 +149,7 @@ export function Suppliers() {
               No suppliers yet. Add the first one to start recording GRNs.
             </p>
           ) : (
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-y border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
@@ -204,6 +205,7 @@ export function Suppliers() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -226,7 +228,7 @@ export function Suppliers() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label className="text-xs">Type</Label>
                 <Select value={form.type} onValueChange={(v) => set("type", v)} required>
@@ -271,7 +273,7 @@ export function Suppliers() {
 
             <div className="space-y-1.5">
               <Label className="text-xs">GPS coordinates (optional)</Label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <input
                   type="number"
                   className="input w-full"

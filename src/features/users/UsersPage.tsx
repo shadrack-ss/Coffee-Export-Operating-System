@@ -131,6 +131,7 @@ export function Users() {
       />
 
       <Card className="overflow-hidden">
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
@@ -187,6 +188,7 @@ export function Users() {
             ))}
           </tbody>
         </table>
+        </div>
       </Card>
 
       {/* Create user dialog */}

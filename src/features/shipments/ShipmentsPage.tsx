@@ -148,6 +148,7 @@ export function Shipments() {
 
               {lines.length > 0 && (
                 <CardContent className="pt-0">
+                  <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-y border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
@@ -175,6 +176,7 @@ export function Shipments() {
                       })}
                     </tbody>
                   </table>
+                  </div>
                 </CardContent>
               )}
             </Card>
@@ -189,7 +191,7 @@ export function Shipments() {
             <DialogTitle>New shipment</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreate} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label className="text-xs">Container no.</Label>
                 <input

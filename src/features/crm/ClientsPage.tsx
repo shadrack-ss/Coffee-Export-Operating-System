@@ -118,6 +118,7 @@ export function Clients() {
             <CardTitle>Buyers</CardTitle>
           </CardHeader>
           <CardContent className="px-0">
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-y border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
@@ -148,6 +149,7 @@ export function Clients() {
                 ))}
               </tbody>
             </table>
+            </div>
           </CardContent>
         </Card>
 

@@ -167,7 +167,7 @@ export function BatchDetail() {
       </Dialog>
 
       {/* summary strip */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Net payable weight" value={fmtKgLabel(derived.net_payable_weight_kg)} />
         <Stat label="Landed cost / kg" value={fmtUgxLabel(derived.landed_cost_per_kg)} />
         <Stat label="Total landed cost" value={fmtUgxLabel(derived.total_landed_cost)} />
@@ -233,6 +233,7 @@ export function BatchDetail() {
           </CardHeader>
           <CardContent>
             {(
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <tbody>
                   {derived.components.map((c) => (
@@ -265,6 +266,7 @@ export function BatchDetail() {
                   </tr>
                 </tbody>
               </table>
+              </div>
             )}
           </CardContent>
         </Card>

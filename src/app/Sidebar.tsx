@@ -56,9 +56,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         ))}
       </nav>
 
-      <div className="border-t border-border p-4 text-[11px] text-muted-foreground">
-        Phase 1 · Foundation
-      </div>
+
     </div>
   );
 }

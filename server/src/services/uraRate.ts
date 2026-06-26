@@ -70,11 +70,15 @@ async function scrape(forDate?: Date): Promise<UraRateResult> {
       .waitForFunction(
         () => {
           const rows = document.querySelectorAll("table tbody tr");
-          // DataTables shows a single "No data" row while loading — wait until
-          // there are real data rows or we've waited long enough.
           if (rows.length === 0) return false;
-          const firstCell = rows[0]?.querySelector("td")?.textContent?.trim() ?? "";
-          return firstCell.length > 0 && firstCell !== "No data available in table";
+          const firstCell = (rows[0]?.querySelector("td")?.textContent?.trim() ?? "").toLowerCase();
+          // Exclude DataTables transient states — wait for real row content
+          return (
+            firstCell.length > 0 &&
+            !firstCell.startsWith("loading") &&
+            !firstCell.startsWith("processing") &&
+            firstCell !== "no data available in table"
+          );
         },
         { timeout: 15_000 },
       )

@@ -19,5 +19,5 @@ export const config = {
     "postgres://ceos:ceos@localhost:5432/ceos",
   ),
   jwtSecret: required("JWT_SECRET", "dev-only-insecure-secret-change-me"),
-  corsOrigin: process.env.CORS_ORIGIN ?? "http://localhost:5173",
+  corsOrigin: process.env.CORS_ORIGIN ?? (isProd ? (() => { throw new Error("CORS_ORIGIN must be set in production"); })() : /^http:\/\/localhost:\d+$/),
 };

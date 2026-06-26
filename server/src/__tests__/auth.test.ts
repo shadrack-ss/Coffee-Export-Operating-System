@@ -31,17 +31,17 @@ describe("POST /auth/login", () => {
     const res = await app.inject({
       method: "POST",
       url: "/auth/login",
-      body: { email: "admin@ceos.ug" },
+      body: { identifier: "admin@ceos.ug" },
     });
     expect(res.statusCode).toBe(400);
     expect(res.json().error).toBe("invalid_body");
   });
 
-  it("returns 400 for invalid email format", async () => {
+  it("returns 400 for empty identifier", async () => {
     const res = await app.inject({
       method: "POST",
       url: "/auth/login",
-      body: { email: "not-an-email", password: "pw" },
+      body: { identifier: "", password: "pw" },
     });
     expect(res.statusCode).toBe(400);
   });
@@ -52,7 +52,7 @@ describe("POST /auth/login", () => {
     const res = await app.inject({
       method: "POST",
       url: "/auth/login",
-      body: { email: "nobody@ceos.ug", password: "pw" },
+      body: { identifier: "nobody@ceos.ug", password: "pw" },
     });
     expect(res.statusCode).toBe(401);
     expect(res.json().error).toBe("invalid_credentials");
@@ -75,7 +75,7 @@ describe("POST /auth/login", () => {
     const res = await app.inject({
       method: "POST",
       url: "/auth/login",
-      body: { email: "inactive@ceos.ug", password: TEST_PW },
+      body: { identifier: "inactive@ceos.ug", password: TEST_PW },
     });
     expect(res.statusCode).toBe(401);
   });
@@ -97,7 +97,7 @@ describe("POST /auth/login", () => {
     const res = await app.inject({
       method: "POST",
       url: "/auth/login",
-      body: { email: "admin@ceos.ug", password: "wrong-password" },
+      body: { identifier: "admin@ceos.ug", password: "wrong-password" },
     });
     expect(res.statusCode).toBe(401);
     expect(res.json().error).toBe("invalid_credentials");
@@ -120,7 +120,7 @@ describe("POST /auth/login", () => {
     const res = await app.inject({
       method: "POST",
       url: "/auth/login",
-      body: { email: "admin@ceos.ug", password: TEST_PW },
+      body: { identifier: "admin@ceos.ug", password: TEST_PW },
     });
     expect(res.statusCode).toBe(200);
     const body = res.json<{ token: string; user: { role: string } }>();

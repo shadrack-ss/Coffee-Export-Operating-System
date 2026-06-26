@@ -41,7 +41,7 @@ export function LoginScreen() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <main className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
           <span className="flex size-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
@@ -90,6 +90,6 @@ export function LoginScreen() {
           </form>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

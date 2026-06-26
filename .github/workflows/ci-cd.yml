@@ -1,0 +1,106 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Don't run overlapping deploys; cancel superseded runs on the same ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. Tests — runs on every push and PR. No database needed (tests mock db.ts).
+  # ---------------------------------------------------------------------------
+  test:
+    runs-on: ubuntu-latest
+    env:
+      # Skip Puppeteer's Chromium download in CI — tests mock the PDF service.
+      PUPPETEER_SKIP_DOWNLOAD: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # --- Frontend ---
+      - name: Install frontend deps
+        run: npm ci
+
+      - name: Frontend tests
+        run: npm test
+
+      - name: Frontend typecheck + build
+        run: npm run build
+
+      # --- Backend (server/) ---
+      - name: Install server deps
+        working-directory: server
+        run: npm ci
+
+      - name: Server typecheck
+        working-directory: server
+        run: npm run typecheck
+
+      - name: Server tests
+        working-directory: server
+        run: npm test
+
+  # ---------------------------------------------------------------------------
+  # 2. Deploy — only on push to main, only after tests pass.
+  #    Frontend is built here and shipped; backend is updated over SSH.
+  # ---------------------------------------------------------------------------
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Build frontend (same-origin API under /api)
+        run: |
+          npm ci
+          VITE_API_URL=/api npm run build
+
+      - name: Ship frontend build to VPS (staging dir)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "dist"
+          target: "/root/ceos-deploy"
+          strip_components: 1
+          rm: true
+
+      - name: Update backend + swap frontend on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            # --- Backend: pull latest, install, migrate, restart ---
+            cd ~/coffee-export-system
+            git fetch origin main
+            git reset --hard origin/main
+            cd server
+            npm install --no-audit --no-fund
+            node --env-file=.env --import tsx/esm scripts/migrate.ts
+            pm2 restart ceos-api --update-env
+            # --- Frontend: atomically replace the served files ---
+            mkdir -p /var/www/cfe
+            rm -rf /var/www/cfe/*
+            cp -r /root/ceos-deploy/* /var/www/cfe/
+            rm -rf /root/ceos-deploy

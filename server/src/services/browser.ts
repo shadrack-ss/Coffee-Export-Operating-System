@@ -11,7 +11,16 @@ export function getBrowser(): Promise<Browser> {
   if (!browserPromise) {
     browserPromise = puppeteer.launch({
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+    }).then(
+      (browser) => {
+        browser.on("disconnected", () => { browserPromise = null; });
+        return browser;
+      },
+      (err) => {
+        browserPromise = null;
+        throw err;
+      },
+    );
   }
   return browserPromise;
 }

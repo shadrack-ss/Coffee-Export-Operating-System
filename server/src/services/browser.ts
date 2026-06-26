@@ -9,7 +9,9 @@ let browserPromise: Promise<Browser> | null = null;
 
 export function getBrowser(): Promise<Browser> {
   if (!browserPromise) {
+    const executablePath = process.env.CHROME_PATH || undefined;
     browserPromise = puppeteer.launch({
+      executablePath,
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
     }).then(
       (browser) => {

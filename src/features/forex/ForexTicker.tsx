@@ -34,7 +34,8 @@ export function ForexTicker() {
     .sort((a, b) => b.captured_at.localeCompare(a.captured_at))[1];
   const delta = prev ? rate - prev.usd_ugx_rate : 0;
 
-  // Fetch today's URA Exports rate from the server; degrade gracefully if it's down.
+  // Trigger URA rate sync. Server returns 202 immediately and scrapes in the
+  // background, so we poll /state again at 10 s and 25 s to pick up the result.
   const refresh = async () => {
     setSyncing(true);
     try {
@@ -42,6 +43,8 @@ export function ForexTicker() {
       if (result.ok) {
         setFeedDown(false);
         await data.refresh();
+        setTimeout(() => { data.refresh().catch(() => {}); }, 10_000);
+        setTimeout(() => { data.refresh().catch(() => {}); }, 25_000);
       } else {
         setFeedDown(true);
       }

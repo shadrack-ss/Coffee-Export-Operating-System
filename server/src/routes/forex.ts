@@ -29,14 +29,12 @@ export default async function forexRoutes(app: FastifyInstance) {
     "/forex/sync-ura",
     { preHandler: [app.requirePermission("forex.manage")] },
     async (_req, reply) => {
-      const result = await runUraSync(app.log);
-      if (result.ok) {
-        return reply.send({ ok: true, rate: result.rate, date: result.date });
-      }
-      if (result.debug) {
-        app.log.warn(`URA sync debug — table snapshot: ${result.debug}`);
-      }
-      return reply.code(502).send({ ok: false, error: result.error });
+      // Fire and forget — scrape is slow (15–25 s). Return immediately so
+      // proxies and browsers don't time out. Client polls /state for the result.
+      runUraSync(app.log).catch((err: unknown) => {
+        app.log.error(err instanceof Error ? err.message : String(err));
+      });
+      return reply.code(202).send({ ok: true, status: "started" });
     },
   );
 

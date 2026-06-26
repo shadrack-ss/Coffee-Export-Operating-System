@@ -95,8 +95,11 @@ export function Forex() {
     try {
       const r = await syncUraRateApi();
       if (r.ok) {
-        await data.refresh();
         setFeedDown(false);
+        await data.refresh();
+        // Server scrapes in background — poll again to surface any rate change
+        setTimeout(() => { data.refresh().catch(() => {}); }, 10_000);
+        setTimeout(() => { data.refresh().catch(() => {}); }, 25_000);
       } else {
         setFeedDown(true);
       }

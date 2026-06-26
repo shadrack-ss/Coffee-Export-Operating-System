@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
+import { Combobox } from "@/shared/ui/combobox";
 import {
   fmtUgxLabel,
   fmtKgLabel,
@@ -289,21 +290,13 @@ export function NewGRN() {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field label="Origin district" error={showErr("origin_district")}>
-                  <Select
+                  <Combobox
+                    options={districtOptions}
                     value={f.origin_district}
-                    onValueChange={(v) => set("origin_district", v)}
-                  >
-                    <SelectTrigger aria-invalid={!!showErr("origin_district")}>
-                      <SelectValue placeholder="Select district…" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {districtOptions.map((d) => (
-                        <SelectItem key={d.value} value={d.value}>
-                          {d.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onChange={(v) => set("origin_district", v)}
+                    placeholder="Select district…"
+                    searchPlaceholder="Search districts…"
+                  />
                 </Field>
 
                 <Field label="Coffee grade" error={showErr("coffee_grade")}>

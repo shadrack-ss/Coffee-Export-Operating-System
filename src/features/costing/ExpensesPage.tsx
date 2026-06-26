@@ -112,6 +112,7 @@ export function Expenses() {
               </Link>
             </CardHeader>
             <CardContent>
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <tbody>
                   {derived.components.map((c) => (
@@ -152,6 +153,7 @@ export function Expenses() {
                   </tr>
                 </tbody>
               </table>
+              </div>
 
               {gunnyDrift && (
                 <div className="mt-4 rounded-md bg-warning-muted px-3 py-2 text-xs text-warning-foreground">

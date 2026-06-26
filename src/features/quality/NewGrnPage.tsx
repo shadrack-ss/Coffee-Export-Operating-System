@@ -381,7 +381,7 @@ export function NewGRN() {
                     Total {fmtPct(defect_pct)}
                   </Badge>
                 </div>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                   <MiniNumber label="Black beans" value={f.black_beans_pct} onChange={(v) => set("black_beans_pct", v)} />
                   <MiniNumber label="Broken" value={f.broken_pct} onChange={(v) => set("broken_pct", v)} />
                   <MiniNumber label="Husks" value={f.husks_pct} onChange={(v) => set("husks_pct", v)} />

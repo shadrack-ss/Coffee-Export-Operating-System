@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
+import { Combobox } from "@/shared/ui/combobox";
 import {
   Dialog,
   DialogContent,
@@ -244,22 +245,16 @@ export function Suppliers() {
 
               <div className="space-y-1.5">
                 <Label className="text-xs">District</Label>
-                <Select
+                <Combobox
+                  options={(ref?.districts ?? []).map((d) => ({
+                    value: String(d.id),
+                    label: d.name,
+                  }))}
                   value={form.district_id}
-                  onValueChange={(v) => set("district_id", v)}
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select district…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(ref?.districts ?? []).map((d) => (
-                      <SelectItem key={d.id} value={String(d.id)}>
-                        {d.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(v) => set("district_id", v)}
+                  placeholder="Select district…"
+                  searchPlaceholder="Search districts…"
+                />
               </div>
             </div>
 

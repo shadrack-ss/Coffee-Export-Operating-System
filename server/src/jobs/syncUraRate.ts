@@ -29,6 +29,7 @@ export async function runUraSync(log: { info: (s: string) => void; warn: (s: str
     log.info(`URA rate sync: saved ${result.rate} for ${result.date}`);
   } else {
     log.warn(`URA rate sync failed: ${result.error}`);
+    if (result.debug) log.warn(`URA sync table snapshot: ${result.debug}`);
   }
   return result;
 }

@@ -33,6 +33,9 @@ export default async function forexRoutes(app: FastifyInstance) {
       if (result.ok) {
         return reply.send({ ok: true, rate: result.rate, date: result.date });
       }
+      if (result.debug) {
+        app.log.warn(`URA sync debug — table snapshot: ${result.debug}`);
+      }
       return reply.code(502).send({ ok: false, error: result.error });
     },
   );

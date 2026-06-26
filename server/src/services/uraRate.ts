@@ -16,12 +16,12 @@ export interface UraRateResult {
   rate?: number;
   date?: string;
   error?: string;
+  debug?: string;
 }
 
 let inFlight: Promise<UraRateResult> | null = null;
 
 export function fetchUraExportsRate(forDate?: Date): Promise<UraRateResult> {
-  // If a scrape is already running, piggyback on it rather than starting a second one.
   if (inFlight) return inFlight;
   inFlight = scrape(forDate).finally(() => {
     inFlight = null;
@@ -31,7 +31,7 @@ export function fetchUraExportsRate(forDate?: Date): Promise<UraRateResult> {
 
 async function scrape(forDate?: Date): Promise<UraRateResult> {
   const target = forDate ?? new Date();
-  const dateStr = target.toISOString().slice(0, 10); // YYYY-MM-DD for native date input
+  const dateStr = target.toISOString().slice(0, 10);
 
   let page: Page | null = null;
 
@@ -40,16 +40,10 @@ async function scrape(forDate?: Date): Promise<UraRateResult> {
     page = await browser.newPage();
     await page.goto(URA_URL, { waitUntil: "domcontentloaded", timeout: 30_000 });
 
-    // Select "Exports" radio (id=rate-type-2)
     await page.click("#rate-type-2");
-
-    // Narrow to USD only
     await page.select("#currency_code", "USD");
-
-    // Ensure "A day" search mode
     await page.select("#search_criteria", "date");
 
-    // Set the date (type=date expects YYYY-MM-DD)
     await page.evaluate((d: string) => {
       const inp = document.querySelector<HTMLInputElement>("#search_date");
       if (inp) {
@@ -58,37 +52,54 @@ async function scrape(forDate?: Date): Promise<UraRateResult> {
       }
     }, dateStr);
 
-    // Click Search — type="button" with name="submit_search", results are AJAX
     await page.click('button[name="submit_search"]');
 
-    // Wait for the DataTable to repopulate
-    await new Promise((r) => setTimeout(r, 4_000));
+    // Wait for AJAX — give up to 8 s for slower servers
+    await new Promise((r) => setTimeout(r, 8_000));
 
-    // Extract rate — table row: [Exports, US DOLLAR, USD, date, rate]
-    const rate = await page.evaluate(() => {
+    // Capture table content for diagnostics + extract rate
+    const result = await page.evaluate(() => {
       const rows = Array.from(document.querySelectorAll("table tbody tr"));
-      for (const row of rows) {
-        const cells = Array.from(row.querySelectorAll("td")).map(
-          (td) => td.textContent?.trim() ?? "",
-        );
+      const snapshot = rows.slice(0, 6).map((r) =>
+        Array.from(r.querySelectorAll("td")).map((td) => td.textContent?.trim() ?? ""),
+      );
+
+      let rate: number | null = null;
+
+      for (const cells of snapshot) {
+        // Strategy 1: exact column positions [Exports, currency_name, USD, date, rate]
         const isExports = cells[0]?.toLowerCase() === "exports";
         const isUsd = cells[2]?.toUpperCase() === "USD";
         if (isExports && isUsd) {
           const v = parseFloat(cells[cells.length - 1].replace(/,/g, ""));
-          if (Number.isFinite(v) && v > 100) return v;
+          if (Number.isFinite(v) && v > 100) { rate = v; break; }
+        }
+
+        // Strategy 2: any cell contains "USD" and any cell looks like a UGX rate
+        const hasUsd = cells.some((c) => c.toUpperCase() === "USD");
+        const hasExports = cells.some((c) => c.toLowerCase() === "exports");
+        if (hasUsd && hasExports) {
+          for (const c of [...cells].reverse()) {
+            const v = parseFloat(c.replace(/,/g, ""));
+            if (Number.isFinite(v) && v > 1000 && v < 100_000) { rate = v; break; }
+          }
+          if (rate) break;
         }
       }
-      return null;
+
+      return { rate, snapshot };
     });
 
-    if (!rate) {
+    if (!result.rate) {
+      const debug = JSON.stringify(result.snapshot);
       return {
         ok: false,
         error: "Rate not found in URA table — page structure may have changed.",
+        debug,
       };
     }
 
-    return { ok: true, rate, date: dateStr };
+    return { ok: true, rate: result.rate, date: dateStr };
   } catch (err) {
     return {
       ok: false,

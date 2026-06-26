@@ -50,6 +50,7 @@ export const seedBatches: Batch[] = [
     gross_weight_kg: 6240, tare_weight_kg: 240, net_payable_weight_kg: 5640,
     clean_output_kg: null, buyer_id: "c-1", market_price_per_kg: 9800,
     created_at: "2026-06-10T09:00:00.000Z", created_by: "u-grader",
+    voided_at: null, voided_by: null, void_reason: null,
   },
   {
     id: "b-2", batch_code: "MBR-2026-0008", supplier_id: "s-2", origin_district: "Mbale",
@@ -57,6 +58,7 @@ export const seedBatches: Batch[] = [
     gross_weight_kg: 1040, tare_weight_kg: 40, net_payable_weight_kg: 940,
     clean_output_kg: null, buyer_id: null, market_price_per_kg: 8200,
     created_at: "2026-06-12T11:30:00.000Z", created_by: "u-grader",
+    voided_at: null, voided_by: null, void_reason: null,
   },
   {
     id: "b-3", batch_code: "KSE-2026-0011", supplier_id: "s-3", origin_district: "Kasese",
@@ -64,6 +66,7 @@ export const seedBatches: Batch[] = [
     gross_weight_kg: 12300, tare_weight_kg: 300, net_payable_weight_kg: 11820,
     clean_output_kg: null, buyer_id: "c-2", market_price_per_kg: 7400,
     created_at: "2026-06-05T07:15:00.000Z", created_by: "u-grader",
+    voided_at: null, voided_by: null, void_reason: null,
   },
   {
     id: "b-4", batch_code: "MSK-2026-0003", supplier_id: "s-4", origin_district: "Masaka",
@@ -71,6 +74,7 @@ export const seedBatches: Batch[] = [
     gross_weight_kg: 2080, tare_weight_kg: 80, net_payable_weight_kg: null,
     clean_output_kg: null, buyer_id: null, market_price_per_kg: 5200,
     created_at: "2026-06-15T06:45:00.000Z", created_by: "u-grader",
+    voided_at: null, voided_by: null, void_reason: null,
   },
   // processing child of b-3 (Kiboko -> clean Robusta)
   {
@@ -79,6 +83,7 @@ export const seedBatches: Batch[] = [
     gross_weight_kg: 10050, tare_weight_kg: 0, net_payable_weight_kg: 10050,
     clean_output_kg: 10050, buyer_id: "c-2", market_price_per_kg: 7400,
     created_at: "2026-06-08T10:00:00.000Z", created_by: "u-grader",
+    voided_at: null, voided_by: null, void_reason: null,
   },
 ];
 

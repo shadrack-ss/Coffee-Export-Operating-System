@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useData } from "@/core/store";
 import { useAuth } from "@/core/auth";
@@ -47,6 +47,9 @@ export function Forex() {
     await setLiveRateApi(rate, source);
     await data.refresh();
   };
+
+  const liveRateRef = useRef(data.liveRate);
+  liveRateRef.current = data.liveRate;
 
   const [syncing, setSyncing] = useState(false);
   const [syncingUra, setSyncingUra] = useState(false);
@@ -99,10 +102,12 @@ export function Forex() {
       if (!r.ok) { setFeedDown(true); return; }
       setFeedDown(false);
       // Scrape runs in background (~20 s) — keep loading state, then surface result
+      const before = liveRateRef.current?.captured_at;
       await new Promise((res) => setTimeout(res, 22_000));
-      const before = data.liveRate?.captured_at;
       await data.refresh();
-      const after = data.liveRate?.captured_at;
+      // Give React one tick to flush the new state into the ref
+      await new Promise((res) => setTimeout(res, 50));
+      const after = liveRateRef.current?.captured_at;
       setUraMsg(after !== before ? "Rate updated" : "Rate unchanged");
       setTimeout(() => setUraMsg(null), 4_000);
     } catch {

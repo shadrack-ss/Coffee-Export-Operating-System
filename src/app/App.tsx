@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import type { ReactNode } from "react";
 import { AppShell } from "@/app/AppShell";
+import { TourProvider } from "@/features/tour/TourProvider";
 import { useAuth, type Permission } from "@/core/auth";
 import { EmptyState } from "@/shared/components/states";
 import { ShieldAlert } from "lucide-react";
@@ -46,6 +47,7 @@ function Require({
 export default function App() {
   return (
     <BrowserRouter>
+      <TourProvider>
       <Routes>
         {/* Standalone print views — full page, no app chrome */}
         <Route path="/documents/print/:type/:entityId" element={<DocumentPrint />} />
@@ -128,6 +130,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
+      </TourProvider>
     </BrowserRouter>
   );
 }

@@ -29,11 +29,12 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         </div>
       </div>
 
-      <nav className="flex-1 space-y-0.5 overflow-y-auto p-3">
+      <nav id="tour-sidebar" className="flex-1 space-y-0.5 overflow-y-auto p-3">
         {items.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
+            id={`tour-nav-${item.to.replace("/", "") || "dashboard"}`}
             end={item.to === "/"}
             onClick={onNavigate}
             className={({ isActive }) =>

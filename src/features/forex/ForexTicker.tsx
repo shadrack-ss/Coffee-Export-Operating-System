@@ -21,7 +21,7 @@ function relativeTime(iso: string): string {
   return `${Math.round(hrs / 24)}d ago`;
 }
 
-export function ForexTicker() {
+export function ForexTicker({ id }: { id?: string }) {
   const data = useData();
   const { liveRate, forex } = data;
   const syncUraRateApi = useSyncUraRateApi();
@@ -56,7 +56,7 @@ export function ForexTicker() {
   };
 
   return (
-    <div className="flex min-w-0 items-center gap-2 rounded-md border border-border bg-card px-3 py-1.5 sm:gap-3">
+    <div id={id} className="flex min-w-0 items-center gap-2 rounded-md border border-border bg-card px-3 py-1.5 sm:gap-3">
       <div className="hidden flex-col leading-none sm:flex">
         <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
           USD / UGX

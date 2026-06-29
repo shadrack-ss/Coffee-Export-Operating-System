@@ -92,7 +92,7 @@ export function Dashboard() {
         subtitle="Live landed cost, margin and forex risk across all active coffee."
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div id="tour-kpi-cards" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
           label="Active batches"
           value={String(activeBatches.length)}

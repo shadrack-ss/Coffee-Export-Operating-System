@@ -50,6 +50,7 @@ export function Forex() {
 
   const [syncing, setSyncing] = useState(false);
   const [syncingUra, setSyncingUra] = useState(false);
+  const [uraMsg, setUraMsg] = useState<string | null>(null);
   const [feedDown, setFeedDown] = useState(false);
   const [manual, setManual] = useState("");
 
@@ -92,17 +93,18 @@ export function Forex() {
 
   const syncUra = async () => {
     setSyncingUra(true);
+    setUraMsg(null);
     try {
       const r = await syncUraRateApi();
-      if (r.ok) {
-        setFeedDown(false);
-        await data.refresh();
-        // Server scrapes in background — poll again to surface any rate change
-        setTimeout(() => { data.refresh().catch(() => {}); }, 10_000);
-        setTimeout(() => { data.refresh().catch(() => {}); }, 25_000);
-      } else {
-        setFeedDown(true);
-      }
+      if (!r.ok) { setFeedDown(true); return; }
+      setFeedDown(false);
+      // Scrape runs in background (~20 s) — keep loading state, then surface result
+      await new Promise((res) => setTimeout(res, 22_000));
+      const before = data.liveRate?.captured_at;
+      await data.refresh();
+      const after = data.liveRate?.captured_at;
+      setUraMsg(after !== before ? "Rate updated" : "Rate unchanged");
+      setTimeout(() => setUraMsg(null), 4_000);
     } catch {
       setFeedDown(true);
     } finally {
@@ -173,7 +175,7 @@ export function Forex() {
               <>
                 <Button onClick={syncUra} disabled={syncingUra} className="w-full">
                   <Download className={cn("size-4", syncingUra && "animate-pulse")} />
-                  {syncingUra ? "Fetching from URA…" : "Sync URA Exports rate"}
+                  {syncingUra ? "Checking URA… (~20 s)" : uraMsg ?? "Sync URA Exports rate"}
                 </Button>
                 <Button onClick={sync} disabled={syncing} variant="outline" className="w-full">
                   <RefreshCw className={cn("size-4", syncing && "animate-spin")} />

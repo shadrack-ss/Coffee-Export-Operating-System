@@ -234,6 +234,21 @@ export const api = {
       body: JSON.stringify(input),
     });
   },
+
+  markNotificationRead(id: string, read: boolean): Promise<{ ok: boolean }> {
+    return req(`/notifications/${id}/read`, {
+      method: "PATCH",
+      body: JSON.stringify({ read }),
+    });
+  },
+
+  markAllNotificationsRead(): Promise<{ ok: boolean }> {
+    return req("/notifications/read-all", { method: "PATCH" });
+  },
+
+  clearNotifications(): Promise<{ ok: boolean }> {
+    return req("/notifications", { method: "DELETE" });
+  },
 };
 
 export interface ApiCreateUserInput {

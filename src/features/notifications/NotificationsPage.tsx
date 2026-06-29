@@ -1,12 +1,13 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useData } from "@/core/store";
+import { api } from "@/core/api";
 import { deriveAlerts } from "./alerts";
 import { PageHeader, EmptyState } from "@/shared/components/states";
 import { Card } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
-import { Bell, BellOff, AlertTriangle, Info, TriangleAlert, Radio } from "lucide-react";
+import { Bell, BellOff, AlertTriangle, Info, TriangleAlert, Radio, Trash2 } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import type { Severity } from "@/shared/types";
 
@@ -18,12 +19,13 @@ const SEV: Record<Severity, { icon: typeof Info; cls: string; label: string }> =
 
 export function Notifications() {
   const data = useData();
-  const { notifications, update } = data;
+  const { notifications } = data;
   const liveRate = data.liveRate?.usd_ugx_rate ?? 0;
   const sorted = [...notifications].sort((a, b) =>
     b.created_at.localeCompare(a.created_at),
   );
   const unread = notifications.filter((n) => !n.read).length;
+  const [clearing, setClearing] = useState(false);
 
   const alerts = useMemo(
     () => deriveAlerts(data, liveRate),
@@ -34,14 +36,25 @@ export function Notifications() {
     (a, b) => sevRank[a.severity] - sevRank[b.severity],
   );
 
-  const markAll = () =>
-    update({ notifications: notifications.map((n) => ({ ...n, read: true })) });
-  const toggle = (id: string) =>
-    update({
-      notifications: notifications.map((n) =>
-        n.id === id ? { ...n, read: !n.read } : n,
-      ),
-    });
+  const markAll = async () => {
+    await api.markAllNotificationsRead();
+    await data.refresh();
+  };
+
+  const toggle = async (id: string, currentRead: boolean) => {
+    await api.markNotificationRead(id, !currentRead);
+    await data.refresh();
+  };
+
+  const clearAll = async () => {
+    setClearing(true);
+    try {
+      await api.clearNotifications();
+      await data.refresh();
+    } finally {
+      setClearing(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -49,10 +62,24 @@ export function Notifications() {
         title="Notifications"
         subtitle={`${unread} unread · alerts on quality, forex risk, margins and approvals.`}
         action={
-          unread > 0 ? (
-            <Button variant="outline" size="sm" onClick={markAll}>
-              <BellOff className="size-4" /> Mark all read
-            </Button>
+          notifications.length > 0 ? (
+            <div className="flex gap-2">
+              {unread > 0 && (
+                <Button variant="outline" size="sm" onClick={markAll}>
+                  <BellOff className="size-4" /> Mark all read
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearAll}
+                disabled={clearing}
+                className="text-danger hover:border-danger hover:text-danger"
+              >
+                <Trash2 className="size-4" />
+                {clearing ? "Clearing…" : "Clear all"}
+              </Button>
+            </div>
           ) : undefined
         }
       />
@@ -147,7 +174,7 @@ export function Notifications() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => toggle(n.id)}
+                  onClick={() => toggle(n.id, n.read)}
                   className="shrink-0"
                 >
                   {n.read ? "Mark unread" : "Mark read"}

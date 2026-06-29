@@ -20,6 +20,7 @@ import clientRoutes from "./routes/clients.ts";
 import supplierRoutes from "./routes/suppliers.ts";
 import shipmentRoutes from "./routes/shipments.ts";
 import documentRoutes from "./routes/documents.ts";
+import notificationRoutes from "./routes/notifications.ts";
 
 export interface BuildAppOptions {
   /** Pass `false` to silence the logger in tests. */
@@ -76,6 +77,7 @@ export async function buildApp(opts: BuildAppOptions = {}) {
   await app.register(supplierRoutes);
   await app.register(shipmentRoutes);
   await app.register(documentRoutes);
+  await app.register(notificationRoutes);
 
   // 404 without leaking which routes exist beyond a generic message
   app.setNotFoundHandler((_req, reply) => {

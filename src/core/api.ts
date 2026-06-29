@@ -243,11 +243,11 @@ export const api = {
   },
 
   markAllNotificationsRead(): Promise<{ ok: boolean }> {
-    return req("/notifications/read-all", { method: "PATCH" });
+    return req("/notifications/read-all", { method: "PATCH", body: JSON.stringify({}) });
   },
 
   clearNotifications(): Promise<{ ok: boolean }> {
-    return req("/notifications", { method: "DELETE" });
+    return req("/notifications", { method: "DELETE", body: JSON.stringify({}) });
   },
 };
 

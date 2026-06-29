@@ -50,7 +50,7 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
           buttons: ["back", "primary", "skip"],
           showProgress: true,
           skipBeacon: true,
-          primaryColor: "#7c3a1e",
+          primaryColor: "#2d5bbf",
           zIndex: 10000,
         }}
         locale={{
